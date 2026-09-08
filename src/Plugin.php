@@ -9,10 +9,15 @@ declare( strict_types = 1 );
 
 namespace InfiniteIcons;
 
+use InfiniteIcons\Packs\Downloader;
+use InfiniteIcons\Packs\IndexClient;
 use InfiniteIcons\Packs\PackLocator;
 use InfiniteIcons\Packs\Registrar;
 use InfiniteIcons\Render\Icon;
 use InfiniteIcons\Render\Shortcode;
+use InfiniteIcons\Rest\IconsController;
+use InfiniteIcons\Rest\PacksController;
+use InfiniteIcons\Settings\AdminPage;
 use InfiniteIcons\Settings\Options;
 
 defined( 'ABSPATH' ) || exit;
@@ -82,20 +87,37 @@ final class Plugin {
 		}
 		$this->booted = true;
 
-		$options = new Options();
-		$locator = new PackLocator();
-		$icon    = new Icon();
+		$options    = new Options();
+		$locator    = new PackLocator();
+		$icon       = new Icon();
+		$index      = new IndexClient();
+		$downloader = new Downloader( $locator, $index, $options );
+		$registrar  = new Registrar( $locator, $options );
 
 		$this->services = array(
-			'options'   => $options,
-			'locator'   => $locator,
-			'icon'      => $icon,
-			'registrar' => new Registrar( $locator, $options ),
-			'shortcode' => new Shortcode( $icon ),
+			'options'    => $options,
+			'locator'    => $locator,
+			'icon'       => $icon,
+			'index'      => $index,
+			'downloader' => $downloader,
+			'registrar'  => $registrar,
+			'shortcode'  => new Shortcode( $icon ),
+			'admin'      => new AdminPage(),
+			'rest_packs' => new PacksController( $locator, $index, $downloader, $options ),
+			'rest_icons' => new IconsController( $registrar ),
 		);
 
 		$this->services['registrar']->register();
 		$this->services['shortcode']->register();
+		$this->services['admin']->register();
+
+		add_action(
+			'rest_api_init',
+			function () {
+				$this->services['rest_packs']->register_routes();
+				$this->services['rest_icons']->register_routes();
+			}
+		);
 
 		/**
 		 * Fires once every Infinite Icons service is wired up.
@@ -115,7 +137,8 @@ final class Plugin {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $name Service name: options, locator, icon, registrar, shortcode.
+	 * @param string $name Service name: options, locator, icon, index, downloader,
+	 *                     registrar, shortcode, admin, rest_packs or rest_icons.
 	 * @return object|null The service, or null when unknown.
 	 */
 	public function get( string $name ) {

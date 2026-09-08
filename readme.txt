@@ -38,6 +38,24 @@ before it ships. The conversion pipeline is open source; see the link below.
 The plugin makes no network requests of its own and collects no data. The bundled Lucide pack
 is included in the download and works offline.
 
+= Where the icon packs come from =
+
+Lucide ships inside the plugin, so Infinite Icons is fully functional the moment it is
+activated, with no network access at all.
+
+The other five packs are downloaded only when you ask for them, from
+**github.com**, on the Appearance -> Icons screen: opening it or pressing "Check for
+updates" fetches a small JSON list of packs, and pressing "Install" downloads that
+pack's zip. Each download is checked against the SHA-256 checksum published in the list
+before it is unpacked, and the unpacked files are validated to be SVG and JSON only.
+
+No information about your site is ever sent anywhere, and nothing is downloaded in the
+background or on a schedule.
+
+On hosts with a read-only or remote filesystem (WordPress VIP, for instance) downloading
+is turned off automatically; add the packs you want to the plugin's `packs/` directory in
+your deploy instead.
+
 == Installation ==
 
 1. Upload the plugin to `/wp-content/plugins/infinite-icons`, or install it through Plugins → Add New.

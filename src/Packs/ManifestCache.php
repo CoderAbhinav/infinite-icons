@@ -55,6 +55,36 @@ final class ManifestCache {
 	private $memo = array();
 
 	/**
+	 * Reads a local file through WP_Filesystem when it is available.
+	 *
+	 * Hosts that run the WordPress VIP standards forbid raw file reads because
+	 * they are usually remote requests in disguise. These are genuinely local
+	 * files, and WP_Filesystem is the API those hosts expect.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file Absolute path.
+	 * @return string|null Contents, or null when the file could not be read.
+	 */
+	public static function read_file( string $file ): ?string {
+		global $wp_filesystem;
+
+		if ( ! $wp_filesystem && function_exists( 'WP_Filesystem' ) ) {
+			WP_Filesystem();
+		}
+
+		if ( $wp_filesystem ) {
+			$contents = $wp_filesystem->get_contents( $file );
+			return false === $contents ? null : (string) $contents;
+		}
+
+		// WP_Filesystem is not loaded on every request; fall back to a plain
+		// read of a path we have already checked is a readable local file.
+		$contents = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local pack file, not a remote resource.
+		return false === $contents ? null : (string) $contents;
+	}
+
+	/**
 	 * Loads the pack in a directory, from cache when possible.
 	 *
 	 * @since 1.0.0
@@ -69,11 +99,15 @@ final class ManifestCache {
 		if ( ! is_readable( $file ) ) {
 			return null;
 		}
-		$stat = @stat( $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Unreadable files are handled by the null return.
-		if ( ! $stat ) {
+		// filesize()/filemtime() rather than stat(): is_readable() above has
+		// already ruled out the case that would make them warn, so neither needs
+		// silencing, which hosts such as WordPress VIP forbid.
+		$size  = filesize( $file );
+		$mtime = filemtime( $file );
+		if ( false === $size || false === $mtime ) {
 			return null;
 		}
-		$key = $this->key( $dir, (int) $stat['size'], (int) $stat['mtime'] );
+		$key = $this->key( $dir, (int) $size, (int) $mtime );
 
 		if ( array_key_exists( $key, $this->memo ) ) {
 			return $this->memo[ $key ];
@@ -85,8 +119,8 @@ final class ManifestCache {
 			return $cached;
 		}
 
-		$contents = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a bundled JSON file, not a remote resource.
-		$pack     = false === $contents ? null : Pack::from_manifest( json_decode( $contents, true ), $dir, $bundled );
+		$contents = self::read_file( $file );
+		$pack     = null === $contents ? null : Pack::from_manifest( json_decode( $contents, true ), $dir, $bundled );
 
 		if ( $pack instanceof Pack ) {
 			$this->write_cache( $key, $pack );
@@ -151,6 +185,7 @@ final class ManifestCache {
 	 * @return void
 	 */
 	private function write_cache( string $key, Pack $pack ): void {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- self::TTL is WEEK_IN_SECONDS.
 		wp_cache_set( $key, $pack, self::GROUP, self::TTL );
 		if ( ! wp_using_ext_object_cache() ) {
 			set_transient( self::TRANSIENT_PREFIX . $key, $pack, self::TTL );

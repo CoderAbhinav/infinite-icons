@@ -18,6 +18,34 @@ add_action( 'infinite_icons_loaded', function ( InfiniteIcons\Plugin $plugin ) {
 |---|---|---|
 | `$plugin` | `InfiniteIcons\Plugin` | The plugin instance. |
 
+### `infinite_icons_pack_installed`
+
+Fires after a pack has been downloaded, verified and moved into place.
+
+```php
+add_action( 'infinite_icons_pack_installed', function ( InfiniteIcons\Packs\Pack $pack ) {
+	error_log( "Installed {$pack->slug} {$pack->version}" );
+} );
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `$pack` | `InfiniteIcons\Packs\Pack` | The pack that was installed. |
+
+### `infinite_icons_pack_removed`
+
+Fires after a downloaded pack's files have been deleted.
+
+```php
+add_action( 'infinite_icons_pack_removed', function ( string $slug ) {
+	// Clean up anything keyed by this pack.
+} );
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `$slug` | `string` | Slug of the removed pack. |
+
 ### `infinite_icons_registered`
 
 Fires after every enabled pack has been registered with the WordPress Icons API, on `init` priority 10.
@@ -109,3 +137,50 @@ add_filter( 'infinite_icons_render', function ( string $html, string $name, arra
 | `$args` | `array<string, mixed>` | Rendering arguments. |
 
 Anything you add here is output as-is. Escape your own additions.
+
+### `infinite_icons_index_url`
+
+Filters where the list of downloadable packs is fetched from. Must be an HTTPS URL returning
+the `schema: 1` index document; anything else is refused before a request is made.
+
+```php
+add_filter( 'infinite_icons_index_url', function ( string $url ) {
+	return 'https://icons.example.com/index.json';
+} );
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `$url` | `string` | Absolute HTTPS URL. Defaults to the plugin's GitHub release. |
+
+### `infinite_icons_allowed_download_hosts`
+
+Filters the hosts a pack may be downloaded from. A URL whose host is not on this list is
+refused before any request is made, so a tampered index cannot point the site elsewhere.
+
+```php
+add_filter( 'infinite_icons_allowed_download_hosts', function ( array $hosts ) {
+	$hosts[] = 'icons.example.com';
+	return $hosts;
+} );
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `$hosts` | `array<int, string>` | Lower-case host names. Defaults to GitHub's release hosts. |
+
+### `infinite_icons_downloads_supported`
+
+Filters whether packs may be downloaded and unpacked at runtime. Returns `false` automatically
+on WordPress VIP, where the uploads directory is served from an object store rather than a local
+disk. When downloads are off, the Packs screen explains that packs should be committed into the
+plugin's `packs/` directory instead; everything else works unchanged.
+
+```php
+// Turn runtime installation off on a read-only filesystem.
+add_filter( 'infinite_icons_downloads_supported', '__return_false' );
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `$supported` | `bool` | Whether runtime installation is possible. |

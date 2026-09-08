@@ -1,0 +1,62 @@
+{
+  "lucide": [
+    "house",
+    "user",
+    "settings",
+    "heart",
+    "star",
+    "mail",
+    "search",
+    "check"
+  ],
+  "material": [
+    "home",
+    "person",
+    "settings",
+    "favorite",
+    "star",
+    "mail",
+    "search",
+    "check"
+  ],
+  "heroicons": [
+    "home",
+    "user",
+    "cog-6-tooth",
+    "heart",
+    "star",
+    "envelope",
+    "magnifying-glass",
+    "check"
+  ],
+  "tabler": [
+    "home",
+    "user",
+    "settings",
+    "heart",
+    "star",
+    "mail",
+    "search",
+    "check"
+  ],
+  "fontawesome": [
+    "house",
+    "user",
+    "gear",
+    "heart",
+    "star",
+    "envelope",
+    "magnifying-glass",
+    "check"
+  ],
+  "phosphor": [
+    "house",
+    "user",
+    "gear",
+    "heart",
+    "star",
+    "envelope",
+    "magnifying-glass",
+    "check"
+  ]
+}

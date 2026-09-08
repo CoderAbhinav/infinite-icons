@@ -7,6 +7,7 @@
     "php": ">=7.4"
   },
   "require-dev": {
+    "automattic/vipwpcs": "^3.1",
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
     "php-stubs/wordpress-stubs": "^6.7 || ^7.0",
     "phpcompatibility/phpcompatibility-wp": "^2.1",
@@ -31,6 +32,13 @@
     "lint": "phpcs",
     "lint:fix": "phpcbf",
     "analyse": "phpstan analyse",
-    "test": "phpunit"
+    "test": "phpunit",
+    "lint:vip": "phpcs --standard=phpcs-vip.xml.dist",
+    "check": [
+      "@lint",
+      "@lint:vip",
+      "@analyse",
+      "@test"
+    ]
   }
 }

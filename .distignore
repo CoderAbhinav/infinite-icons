@@ -1,0 +1,29 @@
+# Everything that exists only for development. Used by `wp dist-archive` and by
+# the release workflow, so the plugin zip carries the runtime files alone.
+.git
+.github
+.gitignore
+.distignore
+.editorconfig
+.eslintrc.json
+.wp-env.json
+assets/src
+node_modules
+tests
+vendor/bin
+webpack.config.js
+package.json
+package-lock.json
+composer.json
+composer.lock
+.gitattributes
+.phpunit.cache
+.phpunit.result.cache
+docs
+README.md
+phpcs.xml.dist
+phpcs-vip.xml.dist
+phpstan.neon.dist
+phpunit.xml.dist
+CONTRIBUTING.md
+.DS_Store

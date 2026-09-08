@@ -1,0 +1,12 @@
+# Keep development files out of GitHub's source archives too.
+/.github            export-ignore
+/tests              export-ignore
+/assets/src         export-ignore
+/.distignore        export-ignore
+/.editorconfig      export-ignore
+/.eslintrc.json     export-ignore
+/phpcs.xml.dist     export-ignore
+/phpcs-vip.xml.dist export-ignore
+/phpstan.neon.dist  export-ignore
+/phpunit.xml.dist   export-ignore
+/webpack.config.js  export-ignore

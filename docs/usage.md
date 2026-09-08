@@ -74,3 +74,20 @@ are discarded. Colours that could break out of the `style` attribute are rejecte
 | `.ii-align-left` / `-center` / `-right` | wrapper alignment |
 
 Icons inherit `color`, so `color: red` on any ancestor recolours them.
+
+## The settings screen
+
+**Appearance → Icons** has two tabs.
+
+**Packs** lists what is installed and what can be downloaded. Each installed pack can be
+switched on or off, and packs with more than one style (Material's outlined and rounded,
+Heroicons' solid, mini and micro, and so on) expose a checkbox per style. Only the styles you
+enable are registered, which keeps the editor's icon list to a useful size — enabling every
+style of every pack would put more than twenty thousand icons in the picker.
+
+Downloadable packs show eight preview icons, drawn from SVGs that ship inside the plugin, so the
+list renders without contacting anything. Installing fetches the pack from GitHub, verifies its
+checksum, validates the contents and enables its default style.
+
+**Browse** searches every icon that is currently registered and gives you the four ways to use
+the one you pick: its name, a shortcode, a PHP call and block markup.

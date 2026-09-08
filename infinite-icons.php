@@ -93,6 +93,9 @@ if ( is_readable( __DIR__ . '/vendor/autoload.php' ) ) {
 			$relative = substr( $class_name, strlen( __NAMESPACE__ ) + 1 );
 			$file     = __DIR__ . '/src/' . str_replace( '\\', '/', $relative ) . '.php';
 			if ( is_readable( $file ) ) {
+				// The path is built from a class name in this plugin's own
+				// namespace and resolves inside src/, so it is not user input.
+				// phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- Namespaced autoload path.
 				require_once $file;
 			}
 		}
