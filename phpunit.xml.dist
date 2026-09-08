@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+	bootstrap="tests/phpunit/bootstrap.php"
+	colors="true"
+	beStrictAboutOutputDuringTests="true"
+	convertDeprecationsToExceptions="false"
+	cacheResultFile=".phpunit.cache/result"
+>
+	<testsuites>
+		<testsuite name="infinite-icons">
+			<directory suffix="Test.php">tests/phpunit</directory>
+		</testsuite>
+	</testsuites>
+	<coverage>
+		<include>
+			<directory suffix=".php">src</directory>
+		</include>
+	</coverage>
+</phpunit>

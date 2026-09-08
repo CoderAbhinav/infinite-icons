@@ -1,0 +1,9 @@
+/vendor/
+/node_modules/
+/build/
+/tools/
+.phpunit.cache/
+.phpunit.result.cache
+CodeSniffer.conf
+.DS_Store
+*.log

@@ -1,0 +1,14 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 6
+	paths:
+		- infinite-icons.php
+		- uninstall.php
+		- src
+	scanDirectories:
+		- vendor/php-stubs/wordpress-stubs
+	bootstrapFiles:
+		- tests/phpstan/bootstrap.php
+	treatPhpDocTypesAsCertain: false

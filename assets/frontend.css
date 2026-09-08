@@ -1,0 +1,80 @@
+/* Infinite Icons front-end styles. */
+
+.ii-icon {
+	display: inline-block;
+	fill: currentColor;
+	vertical-align: -0.125em;
+}
+
+/* Icons rendered with size="inherit" scale with the surrounding font size. */
+.ii-icon--inherit {
+	width: 1em;
+	height: 1em;
+}
+
+.ii-rotate-90 {
+	transform: rotate(90deg);
+}
+
+.ii-rotate-180 {
+	transform: rotate(180deg);
+}
+
+.ii-rotate-270 {
+	transform: rotate(270deg);
+}
+
+.ii-flip-h {
+	transform: scaleX(-1);
+}
+
+.ii-flip-v {
+	transform: scaleY(-1);
+}
+
+.ii-flip-both {
+	transform: scale(-1);
+}
+
+/* Rotation combined with a flip: the flip is applied first. */
+.ii-rotate-90.ii-flip-h {
+	transform: rotate(90deg) scaleX(-1);
+}
+
+.ii-rotate-90.ii-flip-v {
+	transform: rotate(90deg) scaleY(-1);
+}
+
+.ii-rotate-180.ii-flip-h {
+	transform: rotate(180deg) scaleX(-1);
+}
+
+.ii-rotate-180.ii-flip-v {
+	transform: rotate(180deg) scaleY(-1);
+}
+
+.ii-rotate-270.ii-flip-h {
+	transform: rotate(270deg) scaleX(-1);
+}
+
+.ii-rotate-270.ii-flip-v {
+	transform: rotate(270deg) scaleY(-1);
+}
+
+.ii-align-left,
+.ii-align-center,
+.ii-align-right {
+	display: block;
+}
+
+.ii-align-left {
+	text-align: left;
+}
+
+.ii-align-center {
+	text-align: center;
+}
+
+.ii-align-right {
+	text-align: right;
+}
