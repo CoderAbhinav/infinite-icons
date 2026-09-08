@@ -38,8 +38,25 @@ abstract class TestCase extends WP_UnitTestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Icon collections registered before any test ran.
+	 *
+	 * @since 1.0.0
+	 * @var array<string, array<string, mixed>>|null
+	 */
+	private static $pristine_collections = null;
+
+	/**
+	 * Icons registered before any test ran.
+	 *
+	 * @since 1.0.0
+	 * @var array<string, array<string, mixed>>|null
+	 */
+	private static $pristine_icons = null;
+
 	public function set_up(): void {
 		parent::set_up();
+		self::reset_icon_registries();
 		delete_option( Options::OPTION );
 		( new ManifestCache() )->flush();
 		wp_dequeue_style( \InfiniteIcons\Render\Icon::STYLE_HANDLE );
@@ -59,7 +76,46 @@ abstract class TestCase extends WP_UnitTestCase {
 		}
 		$this->temp_dirs = array();
 		( new ManifestCache() )->flush();
+		self::reset_icon_registries();
 		parent::tear_down();
+	}
+
+	/**
+	 * Restores the icon registries to the state WordPress booted with.
+	 *
+	 * Both registries are singletons that outlive a test, so without this a test that fails
+	 * part way through leaves its collection behind and every later test using the same slug
+	 * fails with "Icon collection is already registered" -- one broken test becoming twenty.
+	 *
+	 * The registries' own unregister() methods are deliberately not used: unregistering a
+	 * collection makes core walk every icon and read its file, which errors on the missing
+	 * files some tests create on purpose. Restoring a snapshot avoids all file access.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected static function reset_icon_registries(): void {
+		$collections = \WP_Icon_Collections_Registry::get_instance();
+		$icons       = \WP_Icons_Registry::get_instance();
+
+		$collections_property = new \ReflectionProperty( $collections, 'registered_collections' );
+		$icons_property       = new \ReflectionProperty( $icons, 'registered_icons' );
+
+		// No-ops since PHP 8.1 and deprecated in 8.5, but still required on PHP 7.4.
+		if ( PHP_VERSION_ID < 80100 ) {
+			$collections_property->setAccessible( true );
+			$icons_property->setAccessible( true );
+		}
+
+		if ( null === self::$pristine_collections ) {
+			self::$pristine_collections = $collections_property->getValue( $collections );
+			self::$pristine_icons       = $icons_property->getValue( $icons );
+			return;
+		}
+
+		$collections_property->setValue( $collections, self::$pristine_collections );
+		$icons_property->setValue( $icons, self::$pristine_icons );
 	}
 
 	/**
@@ -194,9 +250,35 @@ abstract class TestCase extends WP_UnitTestCase {
 	 * @return void
 	 */
 	protected function unregister_collection( string $slug ): void {
-		if ( WP_Icon_Collections_Registry::get_instance()->is_registered( $slug ) ) {
-			wp_unregister_icon_collection( $slug );
+		$collections = WP_Icon_Collections_Registry::get_instance();
+
+		if ( ! $collections->is_registered( $slug ) ) {
+			return;
 		}
+
+		// Core's unregister() walks the collection's icons and reads every file, which errors
+		// on packs whose files are deliberately absent. Drop the entries directly instead.
+		$icons             = WP_Icons_Registry::get_instance();
+		$icons_property    = new \ReflectionProperty( $icons, 'registered_icons' );
+		$collection_holder = new \ReflectionProperty( $collections, 'registered_collections' );
+
+		// No-ops since PHP 8.1 and deprecated in 8.5, but still required on PHP 7.4.
+		if ( PHP_VERSION_ID < 80100 ) {
+			$icons_property->setAccessible( true );
+			$collection_holder->setAccessible( true );
+		}
+
+		$remaining = array_filter(
+			$icons_property->getValue( $icons ),
+			static function ( $icon ) use ( $slug ) {
+				return ( $icon['collection'] ?? '' ) !== $slug;
+			}
+		);
+		$icons_property->setValue( $icons, $remaining );
+
+		$collections_value = $collection_holder->getValue( $collections );
+		unset( $collections_value[ $slug ] );
+		$collection_holder->setValue( $collections, $collections_value );
 	}
 
 	/**
@@ -209,12 +291,36 @@ abstract class TestCase extends WP_UnitTestCase {
 	 */
 	protected function count_icons( string $slug ): int {
 		$count = 0;
-		foreach ( WP_Icons_Registry::get_instance()->get_registered_icons() as $icon ) {
+
+		// Read the registry's own array rather than calling get_registered_icons(), which
+		// loads every icon's file and so cannot be used on packs with a deliberately
+		// missing file.
+		foreach ( self::registered_icons() as $icon ) {
 			if ( ( $icon['collection'] ?? '' ) === $slug ) {
 				++$count;
 			}
 		}
+
 		return $count;
+	}
+
+	/**
+	 * Reads the icons registry without triggering any file reads.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	protected static function registered_icons(): array {
+		$registry = WP_Icons_Registry::get_instance();
+		$property = new \ReflectionProperty( $registry, 'registered_icons' );
+
+		// No-op since PHP 8.1 and deprecated in 8.5, but still required on PHP 7.4.
+		if ( PHP_VERSION_ID < 80100 ) {
+			$property->setAccessible( true );
+		}
+
+		return $property->getValue( $registry );
 	}
 
 	/**

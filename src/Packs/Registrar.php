@@ -124,8 +124,20 @@ final class Registrar {
 				continue;
 			}
 
+			$variants = $this->options->enabled_variants( $pack );
+
+			// One filesystem check per pack, not per icon. Stat'ing every file costs about
+			// ten microseconds each, which on a site with a few large packs adds more than a
+			// tenth of a second to every request purely to detect a broken install. A single
+			// icon per variant is probed instead, which catches a pack directory that failed
+			// to extract or was partly deleted. A file that disappears later is handled by
+			// core: it reads file_path lazily and renders an empty string.
+			if ( ! $this->pack_files_present( $pack, $variants ) ) {
+				wp_unregister_icon_collection( $slug );
+				continue;
+			}
+
 			$this->registered_packs[] = $slug;
-			$variants                 = $this->options->enabled_variants( $pack );
 
 			foreach ( $pack->icons as $icon ) {
 				if ( ! in_array( $icon['variant'], $variants, true ) ) {
@@ -133,11 +145,6 @@ final class Registrar {
 				}
 
 				$path = $pack->icon_path( $icon );
-				if ( ! is_readable( $path ) ) {
-					$this->debug_log( sprintf( 'Icon file "%s" is missing or unreadable.', $path ) );
-					continue;
-				}
-
 				$name = $slug . '/' . $icon['name'];
 
 				/**
@@ -216,6 +223,40 @@ final class Registrar {
 	 */
 	public function has( string $name ): bool {
 		return isset( $this->registered[ $name ] );
+	}
+
+	/**
+	 * Checks that a pack's icon files are actually on disk.
+	 *
+	 * Probes the first icon of each enabled variant rather than every icon, so the cost stays
+	 * constant per pack instead of growing with the thousands of icons a pack can contain.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param Pack               $pack     Pack to probe.
+	 * @param array<int, string> $variants Enabled variant keys.
+	 * @return bool True when the pack's files are readable.
+	 */
+	private function pack_files_present( Pack $pack, array $variants ): bool {
+		$probed = array();
+
+		foreach ( $pack->icons as $icon ) {
+			if ( ! in_array( $icon['variant'], $variants, true ) || isset( $probed[ $icon['variant'] ] ) ) {
+				continue;
+			}
+
+			$probed[ $icon['variant'] ] = true;
+			$path                       = $pack->icon_path( $icon );
+
+			if ( ! is_readable( $path ) ) {
+				$this->debug_log(
+					sprintf( 'Pack "%s" was skipped: icon file "%s" is missing or unreadable.', $pack->slug, $path )
+				);
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

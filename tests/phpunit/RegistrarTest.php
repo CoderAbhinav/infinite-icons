@@ -20,31 +20,17 @@ use InfiniteIcons\Settings\Options;
 final class RegistrarTest extends TestCase {
 
 	/**
-	 * Slugs registered by a test, so they can be unregistered afterwards.
-	 *
-	 * @var array<int, string>
-	 */
-	private $slugs = array();
-
-	public function tear_down(): void {
-		foreach ( $this->slugs as $slug ) {
-			$this->unregister_collection( $slug );
-		}
-		$this->slugs = array();
-		parent::tear_down();
-	}
-
-	/**
 	 * Runs registration for a set of packs.
 	 *
-	 * @param string             $bundled Bundled pack directory.
-	 * @param Options|null       $options Settings to use.
-	 * @param array<int, string> $slugs Slugs to clean up afterwards.
+	 * Collections registered here are cleaned up by TestCase, which restores both icon
+	 * registries to their pre-test state.
+	 *
+	 * @param string       $bundled Bundled pack directory.
+	 * @param Options|null $options Settings to use.
 	 * @return Registrar
 	 */
-	private function register_from( string $bundled, ?Options $options = null, array $slugs = array() ): Registrar {
-		$this->slugs = array_merge( $this->slugs, $slugs );
-		$registrar   = new Registrar( $this->locator_for( $bundled ), $options ?? new Options() );
+	private function register_from( string $bundled, ?Options $options = null ): Registrar {
+		$registrar = new Registrar( $this->locator_for( $bundled ), $options ?? new Options() );
 		$registrar->register_packs();
 		return $registrar;
 	}
@@ -66,7 +52,7 @@ final class RegistrarTest extends TestCase {
 			)
 		);
 
-		$registrar = $this->register_from( $dir, null, array( 'demo' ) );
+		$registrar = $this->register_from( $dir, null );
 
 		$this->assertTrue( \WP_Icon_Collections_Registry::get_instance()->is_registered( 'demo' ) );
 		$this->assertSame( array( 'demo' ), $registrar->registered_packs() );
@@ -81,7 +67,6 @@ final class RegistrarTest extends TestCase {
 
 		// Another plugin got there first.
 		wp_register_icon_collection( 'taken', array( 'label' => 'Someone else' ) );
-		$this->slugs[] = 'taken';
 
 		$this->setExpectedIncorrectUsage( 'WP_Icon_Collections_Registry::register' );
 		$registrar = $this->register_from( $dir );
@@ -90,7 +75,36 @@ final class RegistrarTest extends TestCase {
 		$this->assertSame( 0, $this->count_icons( 'taken' ), 'No icons should be added to a collection we do not own.' );
 	}
 
-	public function test_skips_icons_whose_file_is_missing(): void {
+	public function test_skips_a_pack_whose_files_are_missing(): void {
+		$dir = $this->make_temp_dir();
+		$this->make_pack(
+			$dir,
+			'demo',
+			array(
+				array(
+					'name'       => 'absent',
+					'write_file' => false,
+				),
+				array( 'name' => 'present' ),
+			)
+		);
+
+		$registrar = $this->register_from( $dir, null );
+
+		$this->assertFalse( $registrar->has( 'demo/present' ) );
+		$this->assertSame( 0, $this->count_icons( 'demo' ) );
+		$this->assertFalse(
+			\WP_Icon_Collections_Registry::get_instance()->is_registered( 'demo' ),
+			'A pack that failed its file probe should not leave an empty collection behind.'
+		);
+	}
+
+	/**
+	 * A single icon file that goes missing after installation is left registered on purpose:
+	 * checking every path costs a filesystem stat per icon on every request. Core reads
+	 * file_path lazily and renders an empty string, so the failure stays contained.
+	 */
+	public function test_registers_icons_without_stating_every_file(): void {
 		$dir = $this->make_temp_dir();
 		$this->make_pack(
 			$dir,
@@ -104,11 +118,11 @@ final class RegistrarTest extends TestCase {
 			)
 		);
 
-		$registrar = $this->register_from( $dir, null, array( 'demo' ) );
+		$registrar = $this->register_from( $dir, null );
 
 		$this->assertTrue( $registrar->has( 'demo/present' ) );
-		$this->assertFalse( $registrar->has( 'demo/absent' ) );
-		$this->assertSame( 1, $this->count_icons( 'demo' ) );
+		$this->assertTrue( $registrar->has( 'demo/absent' ) );
+		$this->assertSame( 2, $this->count_icons( 'demo' ) );
 	}
 
 	public function test_registers_only_enabled_variants(): void {
@@ -147,14 +161,14 @@ final class RegistrarTest extends TestCase {
 		);
 
 		// Nothing stored: only the default variant is registered.
-		$registrar = $this->register_from( $dir, null, array( 'demo' ) );
+		$registrar = $this->register_from( $dir, null );
 		$this->assertSame( array( 'demo/home' ), array_keys( $registrar->registered_icons() ) );
 
 		$this->unregister_collection( 'demo' );
 
 		$options = new Options();
 		$options->update( array( 'enabled_variants' => array( 'demo' => array( '', 'mini' ) ) ) );
-		$registrar = $this->register_from( $dir, $options, array( 'demo' ) );
+		$registrar = $this->register_from( $dir, $options );
 
 		$this->assertSame( array( 'demo/home', 'demo/home-mini' ), array_keys( $registrar->registered_icons() ) );
 	}
@@ -167,7 +181,7 @@ final class RegistrarTest extends TestCase {
 		$options = new Options();
 		$options->update( array( 'enabled_packs' => array( 'off' => false ) ) );
 
-		$registrar = $this->register_from( $dir, $options, array( 'on', 'off' ) );
+		$registrar = $this->register_from( $dir, $options );
 
 		$this->assertSame( array( 'on' ), $registrar->registered_packs() );
 		$this->assertFalse( \WP_Icon_Collections_Registry::get_instance()->is_registered( 'off' ) );
@@ -177,8 +191,7 @@ final class RegistrarTest extends TestCase {
 		$dir = $this->make_temp_dir();
 		$this->make_pack( $dir, 'demo', array( array( 'name' => 'home' ) ) );
 
-		$this->slugs[] = 'demo';
-		$registrar     = new Registrar( $this->locator_for( $dir ), new Options() );
+		$registrar = new Registrar( $this->locator_for( $dir ), new Options() );
 		$registrar->register_packs();
 		// A second call must not re-register, which core would flag as
 		// "already registered" via _doing_it_wrong().
@@ -201,7 +214,7 @@ final class RegistrarTest extends TestCase {
 			)
 		);
 
-		$registrar = $this->register_from( $dir, null, array( 'demo' ) );
+		$registrar = $this->register_from( $dir, null );
 		$entry     = $registrar->registered_icons()['demo/home'];
 
 		$this->assertSame( 'demo', $entry['pack'] );
@@ -232,7 +245,7 @@ final class RegistrarTest extends TestCase {
 			}
 		);
 
-		$this->register_from( $dir, null, array( 'demo' ) );
+		$this->register_from( $dir, null );
 
 		$this->assertStringContainsString( 'Filtered', wp_get_icon( 'demo/home', array( 'label' => 'Filtered' ) ) );
 	}
@@ -241,7 +254,7 @@ final class RegistrarTest extends TestCase {
 		$dir = $this->make_temp_dir();
 		$this->make_pack( $dir, 'demo', array( array( 'name' => 'home' ) ) );
 
-		$this->register_from( $dir, null, array( 'demo' ) );
+		$this->register_from( $dir, null );
 
 		$registry = \WP_Icons_Registry::get_instance();
 		$property = new \ReflectionProperty( $registry, 'registered_icons' );
