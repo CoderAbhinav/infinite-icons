@@ -6,6 +6,8 @@ and Gravity Forms.
 
 ## Start here
 
+- `docs/STATE.md` is where things stand right now: verified facts, environment notes and
+  what to pick up next. Read this first, it is the shortest path into the work.
 - `docs/HANDOVER.md` is the full brief. Read it top to bottom before writing any code.
 - `ROADMAP.md` is the human readable overview of milestones and conventions.
 - The GitHub issues and milestones are the source of truth for status.
@@ -42,3 +44,10 @@ dashes, no fancy typography. Use commas, full stops, colons and hyphens.
 
 This repository is checked out at `wp-content/plugins/infinite-icons` inside a Local
 site running WordPress 7.1.2, which is where the icons API landed.
+
+PHP, WP-CLI and Composer are provided by Local and are not on the system PATH. Open
+Local, right click the site and choose "Open site shell" to get them. Docker is not used
+for testing. Do not modify the WordPress install itself, it is needed for testing.
+
+See `docs/STATE.md` section 2 for core's SVG sanitizer allowlist, read from this
+install. It is the constraint every pack and every icon has to satisfy.
