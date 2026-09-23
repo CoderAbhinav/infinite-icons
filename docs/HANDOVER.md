@@ -102,7 +102,6 @@ infinite-icons/
     licenses/                templates for NOTICE and MODIFICATIONS.md
     index.json               catalog
   docs/                      GitHub Pages site, decisions/, packs/, developer/, hosting/
-  scripts/bootstrap-issues.sh
   .github/workflows/         plugin-ci.yml, plugin-release.yml, packs-build.yml
   .distignore  .wp-env.json  composer.json  package.json  phpcs.xml.dist  phpstan.neon.dist
 ```
@@ -111,19 +110,25 @@ infinite-icons/
 
 Done in planning:
 - `ROADMAP.md`: milestones, principles, labels, layout.
-- `scripts/bootstrap-issues.sh`: creates 14 labels, 7 milestones and 47 issues with the `gh` CLI. Idempotent. Run `DRY_RUN=1` first.
+- This handover.
 
-Nothing has been committed to the repository yet. No code exists.
+Published in the repository:
+- 14 labels, 7 milestones and 47 issues, every issue labelled and assigned to a milestone. The GitHub
+  issues are the source of truth for status from here.
+
+The first commit holds these documents and nothing else. No plugin code exists yet. The one off script
+that created the labels, milestones and issues has been removed now that it has run, so that the issues
+on GitHub and a stale copy of their bodies cannot drift apart. It is in the git history at the first
+commit.
 
 ## 8. Immediate next steps, in order
 
-1. Commit `ROADMAP.md`, `scripts/bootstrap-issues.sh` and this file. Run the bootstrap script to publish the issues.
-2. Milestone 0.1: scaffold the repo (issue "Scaffold the repository"), set up CI, contributing docs, write the four decision records.
-3. Milestone 0.2, start with the two spikes that decide everything:
+1. Milestone 0.1: scaffold the repo (issue "Scaffold the repository"), set up CI, contributing docs, write the four decision records.
+2. Milestone 0.2, start with the two spikes that decide everything:
    - Stroke to fill outlining for Lucide. Prove `wp_get_icon()` output matches upstream at 24px.
    - Confirm `wp_register_icon()` works after `init` inside `render_block_data`.
-4. Only then build the pack builder properly, then the runtime, then the UI.
-5. Do not start the admin UI before the Figma work. Abhinav will provide the Figma file. The brief is the issue "Design: Infinite brand and admin visual language".
+3. Only then build the pack builder properly, then the runtime, then the UI.
+4. Do not start the admin UI before the Figma work. Abhinav will provide the Figma file. The brief is the issue "Design: Infinite brand and admin visual language".
 
 ## 9. Working conventions for whoever continues
 

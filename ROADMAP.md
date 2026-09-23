@@ -50,4 +50,6 @@ infinite-icons/            the plugin lives at the repo root
 
 Each milestone has one epic issue that links to its tasks. Tasks carry a goal, scope and acceptance criteria. Decision issues describe the options, the choice and the reasoning, then get closed once the decision is documented in `docs/decisions/`.
 
-To create all of this in the repository run `scripts/bootstrap-issues.sh` with the GitHub CLI installed and authenticated.
+The labels, milestones and issues are already published in this repository. They are the source of truth
+from here, so add, edit and close them on GitHub directly. The one off script that created them has been
+removed now that it has run. It is in the git history at the first commit if it is ever needed again.
