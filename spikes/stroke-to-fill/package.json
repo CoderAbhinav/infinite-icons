@@ -1,0 +1,16 @@
+{
+  "name": "infinite-icons-spike-stroke-to-fill",
+  "private": true,
+  "description": "Throwaway spike for issue #12: outline stroke based icons to fill only paths.",
+  "type": "module",
+  "scripts": {
+    "outline": "node outline.mjs",
+    "compare": "node compare.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "canvaskit-wasm": "0.42.0",
+    "lucide-static": "1.47.0",
+    "pngjs": "7.0.0"
+  }
+}
